@@ -29,7 +29,7 @@ def create_connection_pool() -> None:
         )
         logger.info("PostgreSQL connection pool initialized.")
     except OperationalError as exc:
-        logger.exception("Failed to initialize PostgreSQL connection pool.")
+        logger.error("Failed to initialize PostgreSQL connection pool.")
         raise DatabaseConnectionError(
             "Unable to establish a database connection."
         ) from exc
@@ -43,7 +43,7 @@ def get_connection():
     try:
         return connection_pool.getconn()
     except (PoolError, OperationalError) as exc:
-        logger.exception("Unable to borrow a PostgreSQL connection.")
+        logger.error("Unable to borrow a PostgreSQL connection.")
         raise DatabaseConnectionError(
             "No database connection is currently available."
         ) from exc
