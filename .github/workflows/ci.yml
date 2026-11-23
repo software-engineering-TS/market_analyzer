@@ -37,8 +37,8 @@ jobs:
       ACCESS_TOKEN_EXPIRE_MINUTES: 30
       TEST_DATABASE_URL: postgresql://market_analyzer:market_analyzer_test_password@127.0.0.1:5432/market_analyzer_test
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
           cache: pip
