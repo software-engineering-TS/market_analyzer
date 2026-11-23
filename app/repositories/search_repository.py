@@ -77,12 +77,11 @@ class SearchRepository:
 
         except Exception as ex:
 
-            logger.exception(
-                "Database error while searching stocks | Query=%s",
-                query,
-            )
+            logger.error("Database error while searching stocks")
 
-            raise DatabaseOperationError(str(ex))
+            raise DatabaseOperationError(
+                "Unable to complete stock search."
+            ) from ex
 
         finally:
 
