@@ -38,10 +38,8 @@ class WatchlistRepository:
             ) from exc
         except Exception as exc:
             conn.rollback()
-            logger.exception(
-                "Database error while adding watchlist | UserId=%s Symbol=%s",
-                user_id,
-                symbol,
+            logger.error(
+                "Database error while adding watchlist."
             )
             raise DatabaseOperationError("Unable to add the watchlist item.") from exc
         finally:
@@ -62,9 +60,8 @@ class WatchlistRepository:
                 )
                 return cursor.fetchall()
         except Exception as exc:
-            logger.exception(
-                "Database error while retrieving watchlist | UserId=%s",
-                user_id,
+            logger.error(
+                "Database error while retrieving watchlist."
             )
             raise DatabaseOperationError("Unable to retrieve the watchlist.") from exc
         finally:
@@ -86,10 +83,8 @@ class WatchlistRepository:
                 return deleted
         except Exception as exc:
             conn.rollback()
-            logger.exception(
-                "Database error while deleting watchlist | UserId=%s Symbol=%s",
-                user_id,
-                symbol,
+            logger.error(
+                "Database error while deleting watchlist."
             )
             raise DatabaseOperationError("Unable to remove the watchlist item.") from exc
         finally:
