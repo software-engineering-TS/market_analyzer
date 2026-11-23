@@ -3,7 +3,7 @@
 ## Authentication
 
 - Passwords are stored as bcrypt hashes; plaintext passwords must never be logged or persisted.
-- JWT signing uses `JWT_SECRET_KEY` from the root environment file. Use a random secret of at least 32 characters and keep it out of source control.
+- JWT signing and verification use PyJWT with an explicit algorithm allowlist and `JWT_SECRET_KEY` from the root environment file. Use a random secret of at least 32 characters and keep it out of source control.
 - Access tokens contain a unique `jti` claim and an expiry. Protected requests check revocation before resolving the user.
 - `POST /sma/v1/logout` revokes the current bearer token until its original expiry. Clients must discard the token after logout.
 - Production revocation records are stored in the same private Redis service configured by `RATE_LIMIT_STORAGE_URI`. If Redis is unavailable, token verification and revocation fail closed rather than silently accepting a token.
