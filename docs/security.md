@@ -36,4 +36,4 @@ Yahoo Finance data is supplied by the third-party `yfinance` library. Availabili
 
 ## Deployment boundary
 
-The project is a portfolio application, not a hardened financial trading platform. Before public multi-user deployment, add rate limiting, account recovery, token revocation/refresh policy, a complete browser security policy, HTTPS termination, audit retention policy and operational monitoring. Never market its indicators as investment advice.
+The project is a portfolio application, not a hardened financial trading platform. Before public multi-user deployment, complete account recovery, token revocation/refresh policy, a complete browser security policy, HTTPS termination, audit retention policy and operational monitoring. Never market its indicators as investment advice.
