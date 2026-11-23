@@ -1,193 +1,175 @@
-# 📈 Market Analyzer
+# Market Analyzer
 
-A production-ready full-stack stock market analytics platform built using **FastAPI**, **Streamlit**, and **PostgreSQL**.
+A full-stack market-data analytics application built with **FastAPI**, **PostgreSQL**, **Streamlit** and **Yahoo Finance via yfinance**. Users can register, explore listed companies, review historical prices and technical indicators, and maintain personal watchlists.
 
-The application enables users to search stocks, analyze historical price movements, monitor technical indicators, manage personalized watchlists, and visualize market data through an interactive dashboard.
-
----
+> Market data is provided by a third-party service and may be delayed, incomplete or unavailable. This application is an engineering and learning project, not investment advice or a trading platform.
 
 ## Features
 
-- JWT Authentication
-- Secure User Registration & Login
-- Dashboard with Market Overview
-- Stock Search
-- Detailed Stock Information
-- Historical Price Charts
-- Technical Indicators
-- Personal Watchlist
-- Company Information
-- Responsive Streamlit UI
-- PostgreSQL Database
-- REST API using FastAPI
+- JWT-based registration, login and protected profile access
+- Market overview dashboard
+- Search of the local stock master
+- Company and quote details
+- Historical OHLC price data
+- SMA, EMA, RSI, MACD and Bollinger Bands
+- Per-user stock watchlists
+- Related market news
+- PostgreSQL persistence and API documentation
 
----
+## Architecture
 
-## Application Screenshots
+- **Frontend:** Streamlit (streamlit-app/)
+- **API:** FastAPI (app/main.py)
+- **Business logic:** service layer (app/services/)
+- **Persistence:** repositories using psycopg2 (app/repositories/)
+- **External data:** Yahoo Finance provider (app/providers/)
+- **Database:** PostgreSQL; canonical initial schema at app/database/schema.sql
 
-### 🔑 Authentication & Entry
+## Technology
 
-Onboarding interface for user authentication:
+| Layer | Technologies |
+|---|---|
+| Backend | Python 3.12, FastAPI, Pydantic |
+| Frontend | Streamlit, Plotly |
+| Database | PostgreSQL, psycopg2 |
+| Authentication | bcrypt, JWT |
+| Market data | yfinance, Pandas, NumPy |
+| Testing | pytest, FastAPI TestClient |
+| CI | GitHub Actions |
 
-<p align="center">
-  <img src="streamlit-app/assets/images/landing_page.png" width="800" alt="Landing Page">
-</p>
+## Screenshots
 
-### 📊 Interactive Dashboard
-
-Market overview metrics and comprehensive analytical trends:
-
-<p align="center">
-  <img src="streamlit-app/assets/images/dashboard_full.png" width="800" alt="Full Dashboard View">
-  <br><br>
-  <img src="streamlit-app/assets/images/dashboard.png" width="800" alt="Dashboard Core Metrics">
-</p>
-
-### 🔍 Stock Search & Discovery
-
-Finding assets and reviewing matches within the framework:
+### Landing and dashboard
 
 <p align="center">
-  <img src="streamlit-app/assets/images/searchbox.png" width="800" alt="Search Component">
-  <br><br>
-  <img src="streamlit-app/assets/images/searchbox_with_output.png" width="800" alt="Search Results Interface">
+  <img src="streamlit-app/assets/images/landing_page.png" width="800" alt="Market Analyzer landing page">
+</p>
+<p align="center">
+  <img src="streamlit-app/assets/images/dashboard_full.png" width="800" alt="Market Analyzer dashboard">
 </p>
 
-### 📈 Stock Details & Analytics
-
-Deep dives into charts, metrics, and parameters:
+### Search and stock analytics
 
 <p align="center">
-  <img src="streamlit-app/assets/images/stock_details_1.png" width="800" alt="Stock Overview Metrics">
+  <img src="streamlit-app/assets/images/searchbox_with_output.png" width="800" alt="Stock search results">
   <br><br>
-  <img src="streamlit-app/assets/images/stock_details_2.png" width="800" alt="Historical Analysis Chart">
+  <img src="streamlit-app/assets/images/stock_details_1.png" width="800" alt="Stock overview">
   <br><br>
-  <img src="streamlit-app/assets/images/stock)details_3.png" width="800" alt="Technical Indicators Panel">
+  <img src="streamlit-app/assets/images/stock_details_2.png" width="800" alt="Historical stock chart">
 </p>
-
-### ⭐ Watchlist & Settings
-
-Tracking asset metrics and managing user context parameters:
-
-<p align="center">
-  <img src="streamlit-app/assets/images/watchlist.png" width="800" alt="User Watchlist Tracker">
-  <br><br>
-  <img src="streamlit-app/assets/images/settings.png" width="800" alt="User Settings Profile">
-</p>
-
-## Technology Stack
-
-### Backend
-
-- FastAPI
-- PostgreSQL
-- psycopg2
-- JWT Authentication
-- Passlib (bcrypt)
-- Pydantic
-- yfinance
-
-### Frontend
-
-- Streamlit
-- Plotly
-- Pandas
-- Requests
-
----
-
-## Project Structure
-
-```text
-Market-Analyzer/
-
-app/
-streamlit-app/
-scripts/
-tests/
-README.md
-```
-
----
-
-## REST APIs
-
-### Authentication
-
-| Method | Endpoint           |
-| ------ | ------------------ |
-| POST   | `/sma/v1/signup` |
-| POST   | `/sma/v1/login`  |
-| GET    | `/sma/v1/me`     |
-
-### Dashboard
-
-| Method | Endpoint              |
-| ------ | --------------------- |
-| GET    | `/sma/v1/dashboard` |
-
-### Search
-
-| Method | Endpoint           |
-| ------ | ------------------ |
-| GET    | `/sma/v1/search` |
-
-### Stocks
-
-| Method | Endpoint                        |
-| ------ | ------------------------------- |
-| GET    | `/sma/v1/stocks/{symbol}`     |
-| GET    | `/sma/v1/{symbol}/history`    |
-| GET    | `/sma/v1/{symbol}/indicators` |
 
 ### Watchlist
 
-| Method | Endpoint                |
-| ------ | ----------------------- |
-| GET    | `/watchlist`          |
-| POST   | `/watchlist`          |
-| DELETE | `/watchlist/{symbol}` |
+<p align="center">
+  <img src="streamlit-app/assets/images/watchlist.png" width="800" alt="Personal stock watchlist">
+</p>
 
----
+## Project structure
 
-## Installation
+    app/
+      api/                 FastAPI controllers
+      database/            PostgreSQL connection pool and schema
+      dependencies/        FastAPI dependency injection
+      exceptions/          Typed domain and application errors
+      middleware/          Request logging
+      models/              Request and response models
+      providers/           Yahoo Finance and news integrations
+      repositories/        PostgreSQL data access
+      security/             Password hashing and JWT helpers
+      services/             Application business logic
+      utils/                Indicators and response utilities
+    streamlit-app/
+      api/                  Backend API client functions
+      components/           Reusable UI components
+      screens/              Application screens
+      assets/               Documentation screenshots and styles
+    scripts/                Stock master CSV import
+    tests/                  Unit and optional PostgreSQL integration tests
+    docs/                   Architecture, security and test guides
 
-Clone the repository
+## Local setup
 
-```bash
-git clone https://github.com/<username>/Market-Analyzer.git
-```
+### 1. Prerequisites
 
-```bash
+- Python 3.12
+- PostgreSQL 16 (or a compatible supported PostgreSQL release)
+- Git
 
-pip install requirements.txt
+### 2. Clone and install
 
-Backend
+    git clone https://github.com/software-engineering-TS/market_analyzer.git
+    cd market_analyzer
 
-```bash
+    python -m venv .venv
+    # Windows CMD: .venv\Scripts\activate
+    # PowerShell: .\.venv\Scripts\Activate.ps1
 
-uvicorn app.main:app --reload
-```
+    python -m pip install --upgrade pip
+    python -m pip install -r requirements-dev.txt
+    python -m pip install -r streamlit-app/requirements.txt
 
-Frontend
+### 3. Configure environment
 
-```bash
-cd streamlit-app
+Copy .env.example to .env. Set your local PostgreSQL connection values and create a random JWT_SECRET_KEY of at least 32 characters. Never commit the populated .env.
 
-streamlit run app.py
-```
+Copy streamlit-app/.env.example to streamlit-app/.env when the frontend needs a custom API URL.
 
-## Future Improvements
+### 4. Initialize the database
 
-- Portfolio Tracking
-- AI Stock Insights
-- Email Alerts
-- Real-time Streaming
-- News Sentiment Analysis
-- Price Prediction Models
+Create the database and dedicated role corresponding to your .env, then apply the schema:
 
----
+    psql -h 127.0.0.1 -U market_analyzer -d market_analyzer -f app/database/schema.sql
+
+Load the supplied NSE equity master list:
+
+    python -m scripts.load_master_stocks
+
+### 5. Run the application
+
+Terminal 1 — from the repository root:
+
+    uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+
+Terminal 2:
+
+    cd streamlit-app
+    streamlit run app.py
+
+- Streamlit UI: http://localhost:8501
+- FastAPI docs: http://127.0.0.1:8000/docs
+
+## Tests
+
+Run the unit test suite:
+
+    python -m pytest -q
+
+The PostgreSQL schema smoke test is enabled when TEST_DATABASE_URL points to a disposable test database. GitHub Actions starts PostgreSQL and runs it automatically.
+
+See docs/testing.md for full instructions.
+
+## API overview
+
+| Method | Endpoint | Purpose |
+|---|---|---|
+| POST | /sma/v1/signup | Register |
+| POST | /sma/v1/login | Authenticate |
+| GET | /sma/v1/me | Current user profile |
+| GET | /sma/v1/dashboard | Dashboard |
+| GET | /sma/v1/search | Search stock master |
+| GET | /sma/v1/stocks/{symbol} | Stock details |
+| GET | /sma/v1/{symbol}/history | Historical prices |
+| GET | /sma/v1/{symbol}/indicators | Technical indicators |
+| GET | /watchlist | Current user's watchlist |
+| POST | /watchlist/add | Add a symbol |
+| DELETE | /watchlist/remove/{symbol} | Remove a symbol |
+
+Protected routes require an Authorization: Bearer access-token header.
+
+## Security and limitations
+
+See docs/security.md. The application uses third-party market data and should not be used as a source of guaranteed real-time prices or investment recommendations. Before public multi-user deployment, add rate limiting, account recovery, token revocation policy, HTTPS, security headers, operational monitoring and a formal data-retention policy.
 
 ## License
 
-MIT License
+MIT
