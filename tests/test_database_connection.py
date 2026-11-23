@@ -1,6 +1,10 @@
-"""Tests for PostgreSQL connection-pool cleanup."""
+"""Tests for PostgreSQL connection-pool lifecycle and cleanup."""
+
+import pytest
+from psycopg2.pool import PoolError
 
 import app.database.connection as database_connection
+from app.exceptions.database_exceptions import DatabaseConnectionError
 
 
 class FakeConnection:
@@ -21,13 +25,60 @@ class FakeConnection:
 
 
 class FakePool:
-    closed = 0
-
-    def __init__(self):
+    def __init__(self, closed=0, get_error=None, connection=None):
+        self.closed = closed
+        self.get_error = get_error
+        self.connection = connection
         self.put_calls = []
+        self.closeall_calls = 0
+
+    def getconn(self):
+        if self.get_error is not None:
+            raise self.get_error
+        return self.connection
 
     def putconn(self, connection, close=False):
         self.put_calls.append((connection, close))
+
+    def closeall(self):
+        self.closeall_calls += 1
+        self.closed = 1
+
+
+def test_get_connection_rejects_uninitialized_pool(monkeypatch):
+    monkeypatch.setattr(database_connection, "connection_pool", None)
+
+    with pytest.raises(DatabaseConnectionError, match="not initialized"):
+        database_connection.get_connection()
+
+
+def test_get_connection_rejects_closed_pool(monkeypatch):
+    monkeypatch.setattr(database_connection, "connection_pool", FakePool(closed=1))
+
+    with pytest.raises(DatabaseConnectionError, match="not initialized"):
+        database_connection.get_connection()
+
+
+def test_get_connection_wraps_pool_exhaustion(monkeypatch):
+    monkeypatch.setattr(
+        database_connection,
+        "connection_pool",
+        FakePool(get_error=PoolError("pool exhausted")),
+    )
+
+    with pytest.raises(DatabaseConnectionError, match="currently available"):
+        database_connection.get_connection()
+
+
+def test_get_connection_returns_borrowed_connection(monkeypatch):
+    connection = FakeConnection()
+    monkeypatch.setattr(
+        database_connection,
+        "connection_pool",
+        FakePool(connection=connection),
+    )
+
+    assert database_connection.get_connection() is connection
 
 
 def test_release_connection_rolls_back_before_returning_to_pool(monkeypatch):
@@ -62,3 +113,21 @@ def test_release_connection_closes_connection_when_pool_is_unavailable(monkeypat
 
     assert connection.close_calls == 1
     assert connection.rollback_calls == 0
+
+
+def test_close_connection_pool_closes_and_resets_global(monkeypatch):
+    fake_pool = FakePool()
+    monkeypatch.setattr(database_connection, "connection_pool", fake_pool)
+
+    database_connection.close_connection_pool()
+
+    assert fake_pool.closeall_calls == 1
+    assert database_connection.connection_pool is None
+
+
+def test_close_connection_pool_is_safe_when_uninitialized(monkeypatch):
+    monkeypatch.setattr(database_connection, "connection_pool", None)
+
+    database_connection.close_connection_pool()
+
+    assert database_connection.connection_pool is None
