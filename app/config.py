@@ -15,26 +15,28 @@ class Settings(BaseSettings):
     APP_NAME: str = "Market Analyzer"
     APP_VERSION: str = "1.1.0"
     ENVIRONMENT: str = "development"
-
     HOST: str = "127.0.0.1"
     PORT: int = Field(default=8000, ge=1, le=65535)
-
     DB_HOST: str
     DB_PORT: int = Field(default=5432, ge=1, le=65535)
     DB_NAME: str
     DB_USER: str
     DB_PASSWORD: str
-
     JWT_SECRET_KEY: str = Field(min_length=32)
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(default=30, gt=0, le=1440)
     RATE_LIMIT_STORAGE_URI: str = "memory://"
 
     @model_validator(mode="after")
-    def validate_production_rate_limit_storage(self):
-        """Require shared rate-limit storage outside single-process development."""
-        if self.ENVIRONMENT.lower() == "production" and not self.RATE_LIMIT_STORAGE_URI.startswith(("redis://", "rediss://")):
-            raise ValueError("Production deployments must configure Redis rate-limit storage.")
+    def validate_runtime_security(self):
+        """Reject unsafe production defaults and unsupported JWT algorithms."""
+        if self.JWT_ALGORITHM != "HS256":
+            raise ValueError("Only the explicitly supported HS256 JWT algorithm is allowed.")
+        if self.ENVIRONMENT.lower() == "production":
+            if not self.RATE_LIMIT_STORAGE_URI.startswith(("redis://", "rediss://")):
+                raise ValueError("Production deployments must configure Redis rate-limit storage.")
+            if self.JWT_SECRET_KEY.lower().startswith(("change-me", "your-", "replace-")):
+                raise ValueError("Production deployments must use a unique JWT secret.")
         return self
 
     model_config = SettingsConfigDict(
