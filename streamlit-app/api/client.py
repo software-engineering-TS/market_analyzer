@@ -10,10 +10,7 @@ class APIClient:
         self.base_url = API_BASE_URL.rstrip("/")
 
     def _headers(self):
-        headers = {
-            "Content-Type": "application/json",
-        }
-
+        headers = {"Content-Type": "application/json"}
         token = st.session_state.get("token")
 
         if token:
@@ -21,96 +18,76 @@ class APIClient:
 
         return headers
 
-    def _handle_response(self, response: requests.Response):
-        """
-        Parse the HTTP response and return a dictionary.
-        """
-
+    def _handle_response(self, response: requests.Response) -> dict:
+        """Return JSON for successful responses and safe errors otherwise."""
         try:
             response.raise_for_status()
-            return response.json()
-
         except requests.HTTPError:
-            try:
-                error = response.json()
-            except ValueError:
-                error = {
-                    "message": response.text
-                }
-
             return {
                 "status": "error",
-                "message": error.get(
-                    "message",
-                    f"HTTP {response.status_code}"
-                ),
+                "message": f"Request failed (HTTP {response.status_code}).",
                 "status_code": response.status_code,
             }
 
-        except ValueError:
+        try:
+            payload = response.json()
+        except (ValueError, requests.exceptions.JSONDecodeError):
             return {
                 "status": "error",
-                "message": "Invalid JSON response from server.",
+                "message": "The server returned an invalid response. Please try again.",
+                "status_code": response.status_code,
             }
 
-    def get(self, endpoint: str, params=None):
+        if not isinstance(payload, dict):
+            return {
+                "status": "error",
+                "message": "The server returned an unexpected response. Please try again.",
+                "status_code": response.status_code,
+            }
 
+        return payload
+
+    def _request(self, method: str, endpoint: str, *, params=None, data=None) -> dict:
+        """Send an API request with consistent timeout and safe error handling."""
         try:
-            logger.info("GET %s", endpoint)
-            response = requests.get(
+            logger.info("Sending %s API request", method)
+            response = requests.request(
+                method,
                 f"{self.base_url}{endpoint}",
                 headers=self._headers(),
                 params=params,
+                json=data,
                 timeout=API_TIMEOUT,
             )
-
             return self._handle_response(response)
 
-        except requests.RequestException as e:
-            logger.exception("API request failed")
+        except requests.Timeout:
+            logger.warning("API request timed out")
             return {
                 "status": "error",
-                "message": str(e),
+                "message": "The server took too long to respond. Please try again.",
             }
+        except requests.ConnectionError:
+            logger.warning("Unable to connect to API server")
+            return {
+                "status": "error",
+                "message": "Unable to connect to the server. Check your connection and try again.",
+            }
+        except requests.RequestException:
+            logger.error("API request failed")
+            return {
+                "status": "error",
+                "message": "Unable to complete the request. Please try again.",
+            }
+
+    def get(self, endpoint: str, params=None):
+        return self._request("GET", endpoint, params=params)
 
     def post(self, endpoint: str, data=None):
-
-        try:
-            logger.info("POST %s", endpoint)
-            response = requests.post(
-                f"{self.base_url}{endpoint}",
-                headers=self._headers(),
-                json=data,
-                timeout=30,
-            )
-
-            return self._handle_response(response)
-
-        except requests.RequestException as e:
-            logger.exception("API request failed")
-            return {
-                "status": "error",
-                "message": str(e),
-            }
+        return self._request("POST", endpoint, data=data)
 
     def delete(self, endpoint: str):
-
-        try:
-            logger.info("DELETE %s", endpoint)
-            response = requests.delete(
-                f"{self.base_url}{endpoint}",
-                headers=self._headers(),
-                timeout=30,
-            )
-
-            return self._handle_response(response)
-
-        except requests.RequestException as e:
-            logger.exception("API request failed")
-            return {
-                "status": "error",
-                "message": str(e),
-            }
+        return self._request("DELETE", endpoint)
 
 
 api_client = APIClient()
