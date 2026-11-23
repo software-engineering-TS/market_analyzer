@@ -1,6 +1,6 @@
 """Regression tests for authentication endpoint rate limits."""
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Response
 from fastapi.testclient import TestClient
 from slowapi.errors import RateLimitExceeded
 from slowapi.extension import _rate_limit_exceeded_handler
@@ -15,7 +15,7 @@ def _build_limited_app():
 
     @app.get("/limited")
     @limiter.limit("2/minute")
-    async def limited(request: Request):
+    async def limited(request: Request, response: Response):
         return {"ok": True}
 
     return app
