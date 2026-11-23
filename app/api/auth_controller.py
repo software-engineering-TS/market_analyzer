@@ -8,6 +8,7 @@ from app.models.request_models import LoginRequest, SignupRequest
 from app.models.response_models import ApiResponse
 from app.services.auth_service import AuthService
 from app.utils.response_builders import success
+from app.rate_limiting import limiter
 
 router = APIRouter(prefix="/sma/v1", tags=["Authentication"])
 
@@ -19,8 +20,10 @@ router = APIRouter(prefix="/sma/v1", tags=["Authentication"])
     response_model=ApiResponse,
     status_code=status.HTTP_201_CREATED,
 )
+@limiter.limit("5/hour")
 async def signup(
     credentials: SignupRequest,
+    request: Request,
     auth_service: AuthService = Depends(get_auth_service),
 ):
     """Register a new application user."""
@@ -34,6 +37,7 @@ async def signup(
     response_model=ApiResponse,
     status_code=status.HTTP_200_OK,
 )
+@limiter.limit("5/minute")
 async def login(
     credentials: LoginRequest,
     request: Request,
