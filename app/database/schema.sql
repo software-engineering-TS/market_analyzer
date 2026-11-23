@@ -36,7 +36,7 @@ CREATE TABLE IF NOT EXISTS stocks (
 );
 
 CREATE INDEX IF NOT EXISTS idx_stocks_company_name
-    ON stocks USING GIN (company_name gin_trgm_ops);
+    ON stocks (company_name);
 
 CREATE TABLE IF NOT EXISTS watchlist (
     id BIGSERIAL PRIMARY KEY,
