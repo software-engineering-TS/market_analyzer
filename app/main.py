@@ -7,10 +7,11 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.extension import _rate_limit_exceeded_handler
 
 from app.api.auth_controller import router as auth_router
-from app.api.watchlist_controller import router as watchlist_router
 from app.api.dashboard_controller import router as dashboard_router
+from app.api.health_controller import router as health_router
 from app.api.search_controller import router as search_router
 from app.api.stock_controller import router as stock_router
+from app.api.watchlist_controller import router as watchlist_router
 from app.config import settings
 from app.database.connection import close_connection_pool, create_connection_pool
 from app.exceptions.exceptions_handlers import register_exception_handlers
@@ -39,6 +40,7 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_middleware(RequestLoggingMiddleware)
 register_exception_handlers(app)
 
+app.include_router(health_router)
 app.include_router(auth_router)
 app.include_router(watchlist_router)
 app.include_router(dashboard_router)
