@@ -39,3 +39,25 @@ def test_rate_limit_rejects_request_after_limit():
 
     assert response.status_code == 429
     assert "retry-after" in response.headers
+
+
+def test_production_settings_require_shared_redis_storage():
+    import pytest
+    from pydantic import ValidationError
+
+    from app.config import Settings
+
+    common = {
+        "DB_HOST": "localhost",
+        "DB_NAME": "market_analyzer",
+        "DB_USER": "market_analyzer",
+        "DB_PASSWORD": "test-password",
+        "JWT_SECRET_KEY": "unit-test-secret-key-at-least-32-characters-long",
+        "ENVIRONMENT": "production",
+    }
+
+    with pytest.raises(ValidationError):
+        Settings(**common)
+
+    settings = Settings(**common, RATE_LIMIT_STORAGE_URI="rediss://redis.internal:6379/0")
+    assert settings.RATE_LIMIT_STORAGE_URI.startswith("rediss://")
