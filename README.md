@@ -186,7 +186,7 @@ Protected routes require an `Authorization: Bearer <access-token>` header.
 
 ## Security and limitations
 
-See [docs/security.md](docs/security.md). The application uses third-party market data and should not be used as a source of guaranteed real-time prices or investment recommendations. Before public multi-user deployment, add rate limiting, account recovery, token revocation policy, HTTPS, security headers, operational monitoring and a formal data-retention policy.
+See [docs/security.md](docs/security.md). Authentication endpoints have per-IP rate limits. Local development uses in-memory counters; production must configure Redis through `RATE_LIMIT_STORAGE_URI`. The application uses third-party market data and should not be used as a source of guaranteed real-time prices or investment recommendations. Account recovery, token revocation/refresh, HTTPS ingress, CSP, monitoring and formal data-retention controls still require deployment-specific design.
 
 ## License
 

@@ -3,7 +3,7 @@
 from functools import lru_cache
 from pathlib import Path
 
-from pydantic import Field
+from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -28,6 +28,14 @@ class Settings(BaseSettings):
     JWT_SECRET_KEY: str = Field(min_length=32)
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(default=30, gt=0, le=1440)
+    RATE_LIMIT_STORAGE_URI: str = "memory://"
+
+    @model_validator(mode="after")
+    def validate_production_rate_limit_storage(self):
+        """Require shared rate-limit storage outside single-process development."""
+        if self.ENVIRONMENT.lower() == "production" and not self.RATE_LIMIT_STORAGE_URI.startswith(("redis://", "rediss://")):
+            raise ValueError("Production deployments must configure Redis rate-limit storage.")
+        return self
 
     model_config = SettingsConfigDict(
         env_file=BASE_DIR / ".env",

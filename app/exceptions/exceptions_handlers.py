@@ -25,7 +25,7 @@ def register_exception_handlers(app: FastAPI) -> None:
 
     @app.exception_handler(AuthenticationError)
     async def authentication_exception_handler(request: Request, exc: AuthenticationError):
-        logger.warning("Authentication failed | Path=%s | Reason=%s", request.url.path, str(exc))
+        logger.warning("Authentication failed | Path=%s", request.url.path)
         return JSONResponse(status_code=401, content=error(message=str(exc)))
 
     @app.exception_handler(UserAlreadyExistsError)
@@ -78,7 +78,6 @@ def register_exception_handlers(app: FastAPI) -> None:
             "Unhandled application error | Path=%s | ErrorType=%s",
             request.url.path,
             type(exc).__name__,
-            exc_info=(type(exc), exc, exc.__traceback__),
         )
         return JSONResponse(
             status_code=500,

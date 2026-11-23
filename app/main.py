@@ -3,6 +3,8 @@
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from slowapi.errors import RateLimitExceeded
+from slowapi.extension import _rate_limit_exceeded_handler
 
 from app.api.auth_controller import router as auth_router
 from app.api.watchlist_controller import router as watchlist_router
@@ -13,6 +15,7 @@ from app.config import settings
 from app.database.connection import close_connection_pool, create_connection_pool
 from app.exceptions.exceptions_handlers import register_exception_handlers
 from app.middleware.request_logger import RequestLoggingMiddleware
+from app.rate_limiting import limiter
 
 
 @asynccontextmanager
@@ -31,6 +34,8 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_middleware(RequestLoggingMiddleware)
 register_exception_handlers(app)
 
