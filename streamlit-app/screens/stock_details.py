@@ -66,7 +66,7 @@ def render() -> None:
         if st.button(
             "⭐ Watchlist",
             key=f"add_watchlist_{symbol}", # Unique key prevents widget runtime conflicts
-            use_container_width=True,       # Fixed the width parameter bug
+            width="stretch",       # Fixed the width parameter bug
         ):
             with st.spinner("Adding stock to watchlist..."):
                 response = add_watchlist(symbol)

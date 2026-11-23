@@ -84,7 +84,7 @@ def render_watchlist_card(
             view_clicked = st.button(
                 "📈 View Details",
                 key=f"view_{symbol}",
-                use_container_width=True,
+                width="stretch",
                 type="primary",
             )
 
@@ -93,7 +93,7 @@ def render_watchlist_card(
             remove_clicked = st.button(
                 "🗑 Remove",
                 key=f"remove_{symbol}",
-                use_container_width=True,
+                width="stretch",
             )
 
     return (

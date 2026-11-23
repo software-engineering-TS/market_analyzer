@@ -1,6 +1,5 @@
-"""
-Business Exceptions
-"""
+"""Business-level exceptions."""
+
 
 class BusinessException(Exception):
     """Base class for business exceptions."""
@@ -12,4 +11,7 @@ class BusinessException(Exception):
 
 class ResourceNotFoundException(BusinessException):
     """Raised when a requested resource does not exist."""
-    pass
+
+
+class MarketDataUnavailableException(BusinessException):
+    """Raised when an external market-data provider cannot return data."""

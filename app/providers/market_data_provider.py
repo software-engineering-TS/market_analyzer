@@ -10,7 +10,7 @@ import pandas as pd
 from app.models.history_models import PriceCandle, StockHistory
 from app.logger import logger
 from app.models.dashboard_models import IndexData, WatchlistItem
-from app.models.stock_models import StockDetails
+from app.models.stock_models import ProviderStockDetails
 from app.utils.dashboard_constants import INDEX_NAMES
 
 
@@ -189,7 +189,7 @@ class MarketDataProvider:
             return None
         
 
-    def get_stock_details(self, symbol: str) -> StockDetails | None:
+    def get_stock_details(self, symbol: str) -> ProviderStockDetails | None:
         """
         Fetch complete stock details from Yahoo Finance.
         """
@@ -244,7 +244,7 @@ class MarketDataProvider:
                 previous_close,
             )
 
-            return StockDetails(
+            return ProviderStockDetails(
 
                 symbol=symbol,
 

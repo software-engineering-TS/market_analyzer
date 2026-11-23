@@ -118,7 +118,7 @@ def render_stock_chart(history: dict) -> None:
 
         st.plotly_chart(
             figure,
-            use_container_width=True,
+            width="stretch",
             config={
                 "displaylogo": False,
                 "responsive": True,
