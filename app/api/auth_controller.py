@@ -1,6 +1,6 @@
 """Authentication endpoints."""
 
-from fastapi import APIRouter, Depends, Request, status
+from fastapi import APIRouter, Depends, Request, Response, status
 
 from app.dependencies.auth_dependencies import get_auth_service
 from app.dependencies.security_dependencies import get_current_user
@@ -24,6 +24,7 @@ router = APIRouter(prefix="/sma/v1", tags=["Authentication"])
 async def signup(
     credentials: SignupRequest,
     request: Request,
+    response: Response,
     auth_service: AuthService = Depends(get_auth_service),
 ):
     """Register a new application user."""
