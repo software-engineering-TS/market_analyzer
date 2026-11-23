@@ -50,7 +50,7 @@ class StockService:
             symbol=stock["symbol"],
             company_name=stock["company_name"],
             exchange=stock["exchange"],
-            currency=market_data.currency,
+            currency=market_data.currency or stock.get("currency") or "INR",
             sector=market_data.sector,
             industry=market_data.industry,
             website=market_data.website,
