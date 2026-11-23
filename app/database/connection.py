@@ -1,32 +1,25 @@
-"""
-Database Connection Manager
+"""PostgreSQL connection-pool lifecycle."""
 
-Responsible for:
-- Creating PostgreSQL connection pool
-- Providing database connections
-- Returning connections back to the pool
-"""
-
-from psycopg2 import pool
-from psycopg2 import OperationalError
+from psycopg2 import OperationalError, pool
+from psycopg2.pool import PoolError
 
 from app.config import settings
+from app.exceptions.database_exceptions import DatabaseConnectionError
 from app.logger import logger
 
+connection_pool: pool.ThreadedConnectionPool | None = None
 
-connection_pool = None
 
-def create_connection_pool():
-    """
-    Initialize PostgreSQL connection pool.
-    """
-
+def create_connection_pool() -> None:
+    """Initialize the shared PostgreSQL connection pool."""
     global connection_pool
 
-    try:
+    if connection_pool is not None and not connection_pool.closed:
+        return
 
+    try:
         connection_pool = pool.ThreadedConnectionPool(
-            minconn=2,
+            minconn=1,
             maxconn=10,
             host=settings.DB_HOST,
             port=settings.DB_PORT,
@@ -34,56 +27,50 @@ def create_connection_pool():
             user=settings.DB_USER,
             password=settings.DB_PASSWORD,
         )
-
-        logger.info(
-            "PostgreSQL connection pool initialized successfully."
-        )
-
-    except OperationalError:
-
-        logger.exception(
-            "Failed to initialize PostgreSQL connection pool."
-        )
-
-        raise
+        logger.info("PostgreSQL connection pool initialized.")
+    except OperationalError as exc:
+        logger.exception("Failed to initialize PostgreSQL connection pool.")
+        raise DatabaseConnectionError(
+            "Unable to establish a database connection."
+        ) from exc
 
 
 def get_connection():
-    """
-    Get a database connection from the pool.
-    """
+    """Borrow a connection or raise a typed availability error."""
+    if connection_pool is None or connection_pool.closed:
+        raise DatabaseConnectionError("Database connection pool is not initialized.")
 
     try:
-
         return connection_pool.getconn()
+    except (PoolError, OperationalError) as exc:
+        logger.exception("Unable to borrow a PostgreSQL connection.")
+        raise DatabaseConnectionError(
+            "No database connection is currently available."
+        ) from exc
 
-    except Exception:
 
-        logger.exception(
-            "Failed to obtain database connection."
-        )
+def release_connection(connection) -> None:
+    """Return a borrowed connection to the pool."""
+    if connection is None:
+        return
 
-        return None
-    
-def release_connection(connection):
-    """
-    Return a database connection to the pool.
-    """
+    if connection_pool is None or connection_pool.closed:
+        connection.close()
+        return
 
-    if connection is not None:
+    try:
+        connection_pool.putconn(connection, close=bool(connection.closed))
+    except PoolError:
+        logger.exception("Unable to return a PostgreSQL connection to the pool.")
+        connection.close()
 
-        connection_pool.putconn(connection)
 
-def close_connection_pool():
-    """
-    Close all pooled database connections.
-    """
+def close_connection_pool() -> None:
+    """Close all pooled connections during application shutdown."""
+    global connection_pool
 
-    if connection_pool:
-
+    if connection_pool is not None and not connection_pool.closed:
         connection_pool.closeall()
+        logger.info("PostgreSQL connection pool closed.")
 
-        logger.info(
-            "Database connection pool closed."
-        )
-    
+    connection_pool = None
