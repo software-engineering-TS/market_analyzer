@@ -22,18 +22,20 @@ def _build_limited_app(path: str):
 
 
 def test_rate_limit_allows_requests_within_limit():
-    client = TestClient(_build_limited_app("/limited-allowed"))
+    path = "/limited-allowed"
+    client = TestClient(_build_limited_app(path))
 
-    assert client.get(client.app.routes[-1].path).status_code == 200
-    assert client.get("/limited").status_code == 200
+    assert client.get(path).status_code == 200
+    assert client.get(path).status_code == 200
 
 
 def test_rate_limit_rejects_request_after_limit():
-    client = TestClient(_build_limited_app("/limited-exceeded"))
+    path = "/limited-exceeded"
+    client = TestClient(_build_limited_app(path))
 
-    assert client.get("/limited").status_code == 200
-    assert client.get("/limited").status_code == 200
-    response = client.get("/limited")
+    assert client.get(path).status_code == 200
+    assert client.get(path).status_code == 200
+    response = client.get(path)
 
     assert response.status_code == 429
     assert "retry-after" in response.headers
