@@ -22,7 +22,7 @@ def render_stock_search_card(stock: dict) -> bool:
     symbol = stock.get("symbol", "--")
     company = stock.get("company_name", "--")
     exchange = stock.get("exchange", "--")
-    series = stock.get("series", "--")
+    series = stock.get("series") or "--"
     sector = stock.get("sector", "--")
     current_price = stock.get("current_price")
     change_percent = stock.get("change_percent")
