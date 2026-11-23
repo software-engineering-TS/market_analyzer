@@ -17,7 +17,8 @@ This project is a market-data analysis application, not a brokerage, exchange, o
 
 - [ ] Verify password hashing parameters and authentication error behavior against the current security documentation.
 - [ ] Decide and implement an account recovery process before offering accounts to external users.
-- [ ] Define token expiry, logout, revocation, and refresh-token behavior before relying on long-lived sessions.
+- [x] Define short-lived access-token expiry and server-side logout revocation. Production revocation uses the shared private Redis service and fails closed if Redis is unavailable.
+- [ ] Design account recovery and a refresh-token/session renewal policy before relying on long-lived sessions.
 - [ ] Verify login and signup rate limits across multiple application workers using shared Redis storage.
 - [ ] Review CORS, cookie, CSRF, and browser security requirements for the chosen frontend deployment model.
 - [ ] Confirm logs contain request metadata but never passwords, tokens, authorization headers, or raw database connection strings.
@@ -25,7 +26,7 @@ This project is a market-data analysis application, not a brokerage, exchange, o
 ## Release validation
 
 - [ ] Run the complete CI workflow and review all test results.
-- [ ] Run the Dependency Security Audit workflow and resolve or formally assess reported advisories.
+- [ ] Confirm the Dependency Security Audit workflow passes on the release commit and resolve or formally assess reported advisories. The workflow also runs on pull requests.
 - [ ] Review Dependabot pull requests individually; inspect changelogs and test compatibility before merging.
 - [ ] Run deployment smoke tests for health, authentication, stock lookup, watchlists, and database failure handling.
 - [ ] Verify graceful shutdown and database connection cleanup under the actual process manager.

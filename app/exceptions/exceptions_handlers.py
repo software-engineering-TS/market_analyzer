@@ -3,7 +3,11 @@
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
-from app.exceptions.auth_exceptions import AuthenticationError, UserAlreadyExistsError
+from app.exceptions.auth_exceptions import (
+    AuthenticationError,
+    TokenStoreUnavailableError,
+    UserAlreadyExistsError,
+)
 from app.exceptions.business_exceptions import (
     MarketDataUnavailableException,
     ResourceNotFoundException,
@@ -27,6 +31,14 @@ def register_exception_handlers(app: FastAPI) -> None:
     async def authentication_exception_handler(request: Request, exc: AuthenticationError):
         logger.warning("Authentication failed | Path=%s", request.url.path)
         return JSONResponse(status_code=401, content=error(message=str(exc)))
+
+    @app.exception_handler(TokenStoreUnavailableError)
+    async def token_store_unavailable_handler(request: Request, exc: TokenStoreUnavailableError):
+        logger.error("Session revocation storage unavailable | Path=%s", request.url.path)
+        return JSONResponse(
+            status_code=503,
+            content=error(message="Session security service is temporarily unavailable."),
+        )
 
     @app.exception_handler(UserAlreadyExistsError)
     async def user_exists_exception_handler(request: Request, exc: UserAlreadyExistsError):
