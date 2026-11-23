@@ -5,7 +5,7 @@ from psycopg2.extras import RealDictCursor
 
 from app.database.connection import get_connection, release_connection
 from app.exceptions.auth_exceptions import UserAlreadyExistsError
-from app.exceptions.database_exceptions import DatabaseConnectionError, DatabaseOperationError
+from app.exceptions.database_exceptions import DatabaseOperationError
 from app.logger import logger
 
 
@@ -32,7 +32,7 @@ class AuthRepository:
             ) from exc
         except Exception as exc:
             conn.rollback()
-            logger.exception("Database error while creating user | Username=%s", username)
+            logger.exception("Database error while creating user account.")
             raise DatabaseOperationError("Unable to create the user account.") from exc
         finally:
             release_connection(conn)
@@ -51,7 +51,7 @@ class AuthRepository:
                 )
                 return cursor.fetchone()
         except Exception as exc:
-            logger.exception("Database error while retrieving user | Username=%s", username)
+            logger.exception("Database error while retrieving user account.")
             raise DatabaseOperationError("Unable to retrieve the user account.") from exc
         finally:
             release_connection(conn)
@@ -73,8 +73,13 @@ class AuthRepository:
                 return login_info
         except Exception as exc:
             conn.rollback()
-            logger.exception("Database error while saving login audit | UserId=%s", user_id)
-            raise DatabaseOperationError("Unable to save the login audit record.") from exc
+            logger.exception(
+                "Database error while saving login audit | UserId=%s",
+                user_id,
+            )
+            raise DatabaseOperationError(
+                "Unable to save the login audit record."
+            ) from exc
         finally:
             release_connection(conn)
 
@@ -93,7 +98,12 @@ class AuthRepository:
                 )
                 return cursor.fetchone()
         except Exception as exc:
-            logger.exception("Database error while retrieving user | UserId=%s", user_id)
-            raise DatabaseOperationError("Unable to retrieve the user profile.") from exc
+            logger.exception(
+                "Database error while retrieving user profile | UserId=%s",
+                user_id,
+            )
+            raise DatabaseOperationError(
+                "Unable to retrieve the user profile."
+            ) from exc
         finally:
             release_connection(conn)
