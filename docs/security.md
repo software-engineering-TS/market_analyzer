@@ -7,6 +7,9 @@
 - Use a randomly generated secret of at least 32 characters and keep it out of source control.
 - Access tokens currently use the configured `JWT_ALGORITHM` and an expiry in minutes.
 - Protected endpoints use the bearer-token dependency.
+- Login is limited to 5 attempts per client IP per minute; signup is limited to 5 attempts per client IP per hour. Excess requests receive HTTP 429 and rate-limit headers.
+- Rate limits use the client socket address. Do not enable proxy-header trust unless the application is behind a trusted proxy that strips client-supplied forwarding headers.
+- The in-memory rate-limit backend is for local development only and is not shared across processes. Production configuration must set `RATE_LIMIT_STORAGE_URI` to a private Redis endpoint (`redis://` or `rediss://`) so limits are shared across workers and instances.
 - The profile endpoint returns only public fields (`id`, `username`, `email`, `created_at`); password hashes and internal account fields must not be returned.
 
 ## Database
