@@ -12,7 +12,11 @@ class IndicatorCalculator:
     def _close(data: pd.DataFrame, minimum_rows: int, period: int) -> pd.Series | None:
         if period < 1 or data is None or "Close" not in data.columns:
             return None
-        close = pd.to_numeric(data["Close"], errors="coerce").dropna()
+        close = (
+            pd.to_numeric(data["Close"], errors="coerce")
+            .replace([float("inf"), float("-inf")], float("nan"))
+            .dropna()
+        )
         if len(close) < minimum_rows:
             return None
         return close
@@ -76,6 +80,8 @@ class IndicatorCalculator:
         data: pd.DataFrame,
         period: int = 20,
     ) -> tuple[float | None, float | None, float | None]:
+        if period < 2:
+            return None, None, None
         close = IndicatorCalculator._close(data, period, period)
         if close is None:
             return None, None, None
