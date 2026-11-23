@@ -27,6 +27,13 @@ The API middleware currently sets `X-Content-Type-Options: nosniff`, `X-Frame-Op
 
 Yahoo Finance data is supplied by the third-party `yfinance` library. Availability, latency and returned fields depend on the upstream service. Do not treat values as guaranteed real-time exchange data.
 
+## Operational controls
+
+- Keep Redis private to the application network and configure authentication/TLS according to the hosting environment.
+- Configure trusted proxy handling at the ASGI server or ingress only for known proxy addresses; never trust arbitrary `X-Forwarded-For` values.
+- Terminate HTTPS at a trusted ingress and enable HSTS there after confirming every served domain is HTTPS-only. The API does not emit HSTS itself because TLS may be terminated upstream.
+- Configure log retention, access controls, backups and monitoring in the deployment platform. Avoid logging credentials, authorization headers, request bodies or raw database exceptions.
+
 ## Deployment boundary
 
 The project is a portfolio application, not a hardened financial trading platform. Before public multi-user deployment, add rate limiting, account recovery, token revocation/refresh policy, a complete browser security policy, HTTPS termination, audit retention policy and operational monitoring. Never market its indicators as investment advice.
