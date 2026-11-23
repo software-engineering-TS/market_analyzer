@@ -140,12 +140,16 @@ class MarketDataProvider:
 
             logger.debug("Fetching Yahoo Finance data for %s", symbol)
 
-            info = self._fetch_with_retry(\n                lambda: ticker.info, symbol, "company metadata"\n            )
+            info = self._fetch_with_retry(
+                lambda: ticker.info, symbol, "company metadata"
+            )
 
             logger.debug("Yahoo Finance response received for %s", symbol)
 
             try:
-                fast_info = self._fetch_with_retry(\n                    lambda: ticker.fast_info, symbol, "fast market data"\n                ) or {}
+                fast_info = self._fetch_with_retry(
+                    lambda: ticker.fast_info, symbol, "fast market data"
+                ) or {}
             except Exception:
                 logger.warning("Unable to load fast_info for %s", symbol)
                 fast_info = {}
@@ -242,10 +246,14 @@ class MarketDataProvider:
                 symbol,
             )
 
-            info = ticker.info
+            info = self._fetch_with_retry(
+                lambda: ticker.info, symbol, "company metadata"
+            )
 
             try:
-                fast_info = ticker.fast_info
+                fast_info = self._fetch_with_retry(
+                    lambda: ticker.fast_info, symbol, "fast market data"
+                ) or {}
             except Exception:
                 fast_info = {}
 
@@ -411,7 +419,15 @@ class MarketDataProvider:
 
             ticker = self._get_ticker(symbol)
 
-            history = self._fetch_with_retry(\n                lambda: ticker.history(\n                    period=period, interval=interval, auto_adjust=False\n                ),\n                symbol,\n                "historical prices",\n            )\n            if history is None:\n                return None
+            history = self._fetch_with_retry(
+                lambda: ticker.history(
+                    period=period, interval=interval, auto_adjust=False
+                ),
+                symbol,
+                "historical prices",
+            )
+            if history is None:
+                return None
 
             if history.empty:
                 return None
@@ -461,11 +477,15 @@ class MarketDataProvider:
         
             ticker = self._get_ticker(symbol)
     
-            history = ticker.history(
-                period=period,
-                interval=interval,
-                auto_adjust=False,
+            history = self._fetch_with_retry(
+                lambda: ticker.history(
+                    period=period, interval=interval, auto_adjust=False
+                ),
+                symbol,
+                "historical prices",
             )
+            if history is None:
+                return None
     
             if history.empty:
                 return None
