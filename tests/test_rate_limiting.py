@@ -8,12 +8,12 @@ from slowapi.extension import _rate_limit_exceeded_handler
 from app.rate_limiting import limiter
 
 
-def _build_limited_app():
+def _build_limited_app(path: str):
     app = FastAPI()
     app.state.limiter = limiter
     app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-    @app.get("/limited")
+    @app.get(path)
     @limiter.limit("2/minute")
     async def limited(request: Request, response: Response):
         return {"ok": True}
@@ -22,16 +22,14 @@ def _build_limited_app():
 
 
 def test_rate_limit_allows_requests_within_limit():
-    limiter.reset()
-    client = TestClient(_build_limited_app())
+    client = TestClient(_build_limited_app("/limited-allowed"))
 
     assert client.get("/limited").status_code == 200
     assert client.get("/limited").status_code == 200
 
 
 def test_rate_limit_rejects_request_after_limit():
-    limiter.reset()
-    client = TestClient(_build_limited_app())
+    client = TestClient(_build_limited_app("/limited-exceeded"))
 
     assert client.get("/limited").status_code == 200
     assert client.get("/limited").status_code == 200
