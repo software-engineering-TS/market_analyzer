@@ -1,6 +1,10 @@
 """Tests for token revocation storage behavior."""
 from time import time
 
+import pytest
+from redis.exceptions import RedisError
+
+from app.exceptions.auth_exceptions import TokenStoreUnavailableError
 from app.security import token_store
 
 
@@ -33,7 +37,23 @@ def test_production_store_uses_redis(monkeypatch):
         def exists(self, key):
             return key in self.values
 
+        def ping(self):
+            return True
+
     client = FakeRedis()
     monkeypatch.setattr(token_store, "_redis_client", lambda: client)
     token_store.revoke_token_id("production-token", time() + 60)
     assert token_store.is_token_id_revoked("production-token") is True
+    assert token_store.ping_token_store() is True
+
+
+def test_production_store_failure_is_not_reported_as_healthy(monkeypatch):
+    monkeypatch.setattr(token_store.settings, "ENVIRONMENT", "production")
+
+    class BrokenRedis:
+        def ping(self):
+            raise RedisError("private redis endpoint detail")
+
+    monkeypatch.setattr(token_store, "_redis_client", lambda: BrokenRedis())
+    with pytest.raises(TokenStoreUnavailableError):
+        token_store.ping_token_store()
