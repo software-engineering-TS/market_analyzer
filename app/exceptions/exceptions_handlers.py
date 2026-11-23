@@ -8,6 +8,10 @@ from app.exceptions.business_exceptions import (
     MarketDataUnavailableException,
     ResourceNotFoundException,
 )
+from app.exceptions.watchlist_exceptions import (
+    WatchlistAlreadyExistsError,
+    WatchlistNotFoundError,
+)
 from app.exceptions.database_exceptions import (
     DatabaseConnectionError,
     DatabaseOperationError,
@@ -31,6 +35,14 @@ def register_exception_handlers(app: FastAPI) -> None:
             status_code=409,
             content=error(message="An account with that username or email already exists."),
         )
+
+    @app.exception_handler(WatchlistAlreadyExistsError)
+    async def watchlist_conflict_handler(request: Request, exc: WatchlistAlreadyExistsError):
+        return JSONResponse(status_code=409, content=error(message=str(exc)))
+
+    @app.exception_handler(WatchlistNotFoundError)
+    async def watchlist_not_found_handler(request: Request, exc: WatchlistNotFoundError):
+        return JSONResponse(status_code=404, content=error(message=str(exc)))
 
     @app.exception_handler(ResourceNotFoundException)
     async def resource_not_found_handler(request: Request, exc: ResourceNotFoundException):
