@@ -48,3 +48,52 @@ def test_provider_returns_none_when_yahoo_finance_request_fails(monkeypatch):
     )
 
     assert MarketDataProvider().get_stock_details("TCS") is None
+
+
+def test_provider_retries_transient_failures_and_returns_success(monkeypatch):
+    attempts = 0
+    delays = []
+    
+    def flaky_request():
+        nonlocal attempts
+        attempts += 1
+        if attempts < 3:
+            raise RuntimeError("temporary provider failure")
+        return {"price": 123.45}
+
+    monkeypatch.setattr(
+        "app.providers.market_data_provider.time.sleep",
+        delays.append,
+    )
+
+    result = MarketDataProvider()._fetch_with_retry(
+        flaky_request,
+        "TCS",
+        "test request",
+    )
+
+    assert result == {"price": 123.45}
+    assert attempts == 3
+    assert delays == [0.25, 0.5]
+
+
+def test_provider_stops_after_maximum_retry_attempts(monkeypatch):
+    attempts = 0
+    monkeypatch.setattr(
+        "app.providers.market_data_provider.time.sleep",
+        lambda _delay: None,
+    )
+
+    def failing_request():
+        nonlocal attempts
+        attempts += 1
+        raise RuntimeError("provider unavailable")
+
+    result = MarketDataProvider()._fetch_with_retry(
+        failing_request,
+        "TCS",
+        "test request",
+    )
+
+    assert result is None
+    assert attempts == MarketDataProvider.MAX_ATTEMPTS

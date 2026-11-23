@@ -4,6 +4,10 @@ Market Data Provider
 Responsible for fetching market data from Yahoo Finance.
 """
 
+import time
+from collections.abc import Callable
+from typing import TypeVar
+
 import yfinance as yf
 import pandas as pd
 
@@ -13,8 +17,43 @@ from app.models.dashboard_models import IndexData, WatchlistItem
 from app.models.stock_models import ProviderStockDetails
 from app.utils.dashboard_constants import INDEX_NAMES
 
+T = TypeVar("T")
+
 
 class MarketDataProvider:
+    MAX_ATTEMPTS = 3
+    INITIAL_RETRY_DELAY_SECONDS = 0.25
+
+    def _fetch_with_retry(
+        self,
+        operation: Callable[[], T],
+        symbol: str,
+        operation_name: str,
+    ) -> T | None:
+        """Retry transient provider failures with bounded exponential backoff."""
+        for attempt in range(1, self.MAX_ATTEMPTS + 1):
+            try:
+                return operation()
+            except Exception:
+                if attempt == self.MAX_ATTEMPTS:
+                    logger.exception(
+                        "Yahoo Finance request failed after retries | Operation=%s | Symbol=%s",
+                        operation_name,
+                        symbol,
+                    )
+                    return None
+
+                delay = self.INITIAL_RETRY_DELAY_SECONDS * (2 ** (attempt - 1))
+                logger.warning(
+                    "Yahoo Finance request failed; retrying | Operation=%s | Symbol=%s | Attempt=%s/%s",
+                    operation_name,
+                    symbol,
+                    attempt,
+                    self.MAX_ATTEMPTS,
+                )
+                time.sleep(delay)
+
+        return None
 
     def _normalize_symbol(self, symbol: str) -> str:
         symbol = symbol.upper().strip()
@@ -101,12 +140,16 @@ class MarketDataProvider:
 
             logger.debug("Fetching Yahoo Finance data for %s", symbol)
 
-            info = ticker.info
+            info = self._fetch_with_retry(
+                lambda: ticker.info, symbol, "company metadata"
+            )
 
             logger.debug("Yahoo Finance response received for %s", symbol)
 
             try:
-                fast_info = ticker.fast_info
+                fast_info = self._fetch_with_retry(
+                    lambda: ticker.fast_info, symbol, "fast market data"
+                ) or {}
             except Exception:
                 logger.warning("Unable to load fast_info for %s", symbol)
                 fast_info = {}
@@ -203,10 +246,14 @@ class MarketDataProvider:
                 symbol,
             )
 
-            info = ticker.info
+            info = self._fetch_with_retry(
+                lambda: ticker.info, symbol, "company metadata"
+            )
 
             try:
-                fast_info = ticker.fast_info
+                fast_info = self._fetch_with_retry(
+                    lambda: ticker.fast_info, symbol, "fast market data"
+                ) or {}
             except Exception:
                 fast_info = {}
 
@@ -372,11 +419,15 @@ class MarketDataProvider:
 
             ticker = self._get_ticker(symbol)
 
-            history = ticker.history(
-                period=period,
-                interval=interval,
-                auto_adjust=False,
+            history = self._fetch_with_retry(
+                lambda: ticker.history(
+                    period=period, interval=interval, auto_adjust=False
+                ),
+                symbol,
+                "historical prices",
             )
+            if history is None:
+                return None
 
             if history.empty:
                 return None
@@ -426,11 +477,15 @@ class MarketDataProvider:
         
             ticker = self._get_ticker(symbol)
     
-            history = ticker.history(
-                period=period,
-                interval=interval,
-                auto_adjust=False,
+            history = self._fetch_with_retry(
+                lambda: ticker.history(
+                    period=period, interval=interval, auto_adjust=False
+                ),
+                symbol,
+                "historical prices",
             )
+            if history is None:
+                return None
     
             if history.empty:
                 return None
