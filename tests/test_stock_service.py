@@ -4,6 +4,7 @@ import pandas as pd
 import pytest
 
 from app.exceptions.business_exceptions import MarketDataUnavailableException
+from app.models.stock_models import ProviderStockDetails
 from app.services.stock_service import StockService
 
 
@@ -61,3 +62,76 @@ def test_invalid_period_is_rejected_before_provider_call():
         service.get_technical_indicators("TCS", "invalid", "1d")
 
     assert provider.history_dataframe_calls == 0
+
+
+
+def test_stock_details_falls_back_to_stock_master_when_provider_metadata_is_missing():
+    provider_details = ProviderStockDetails(
+        symbol="TCS",
+        company_name=None,
+        exchange=None,
+        currency=None,
+    )
+    service = StockService(
+        FakeRepository(),
+        FakeProvider(details=provider_details),
+    )
+
+    result = service.get_stock_details("TCS")
+
+    assert result.company_name == "Example Limited"
+    assert result.exchange == "NSE"
+    assert result.currency == "INR"
+
+
+def test_stock_details_uses_provider_metadata_when_stock_master_is_incomplete():
+    class IncompleteRepository:
+        def get_stock_by_symbol(self, symbol):
+            return {
+                "symbol": symbol,
+                "company_name": None,
+                "exchange": None,
+                "currency": None,
+            }
+
+    provider_details = ProviderStockDetails(
+        symbol="TCS",
+        company_name="Tata Consultancy Services",
+        exchange="NSE",
+        currency="INR",
+    )
+    service = StockService(
+        IncompleteRepository(),
+        FakeProvider(details=provider_details),
+    )
+
+    result = service.get_stock_details("TCS")
+
+    assert result.company_name == "Tata Consultancy Services"
+    assert result.exchange == "NSE"
+    assert result.currency == "INR"
+
+
+def test_stock_details_returns_typed_provider_error_when_required_metadata_is_missing():
+    class IncompleteRepository:
+        def get_stock_by_symbol(self, symbol):
+            return {
+                "symbol": symbol,
+                "company_name": None,
+                "exchange": None,
+                "currency": None,
+            }
+
+    provider_details = ProviderStockDetails(
+        symbol="TCS",
+        company_name=None,
+        exchange=None,
+        currency=None,
+    )
+    service = StockService(
+        IncompleteRepository(),
+        FakeProvider(details=provider_details),
+    )
+
+    with pytest.raises(MarketDataUnavailableException):
+        service.get_stock_details("TCS")
