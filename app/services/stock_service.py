@@ -42,14 +42,23 @@ class StockService:
                 f"Market data is unavailable for '{symbol}'."
             )
 
+        # Yahoo Finance metadata is incomplete intermittently. Prefer the
+        # canonical stock-master values, then fall back to provider metadata.
+        company_name = stock.get("company_name") or market_data.company_name
+        exchange = stock.get("exchange") or market_data.exchange
+        if not company_name or not exchange:
+            raise MarketDataUnavailableException(
+                f"Required company metadata is unavailable for '{symbol}'."
+            )
+
         dividend_yield = market_data.dividend_yield
         if dividend_yield is not None and dividend_yield < 1:
             dividend_yield *= 100
 
         return StockDetails(
             symbol=stock["symbol"],
-            company_name=stock["company_name"],
-            exchange=stock["exchange"],
+            company_name=company_name,
+            exchange=exchange,
             currency=market_data.currency or stock.get("currency") or "INR",
             sector=market_data.sector,
             industry=market_data.industry,
