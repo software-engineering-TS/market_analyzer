@@ -9,7 +9,7 @@ class SearchStock(BaseModel):
     symbol: str
     company_name: str
     exchange: str
-    series: str
+    series: str | None = None
 
 
 class SearchResponse(BaseModel):
