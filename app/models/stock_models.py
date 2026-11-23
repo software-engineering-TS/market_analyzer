@@ -23,7 +23,7 @@ class StockDetails(BaseModel):
     day_low: float | None = None
 
     fifty_two_week_high: float | None = None
-    fifty_two_week_low: float |None = None
+    fifty_two_week_low: float | None = None
 
     volume: int | None = None
     market_cap: int | None = None
@@ -40,3 +40,18 @@ class StockDetails(BaseModel):
     employee_count: int | None = None
     ceo: str | None = None
     country: str | None = None
+
+
+class ProviderStockDetails(StockDetails):
+    """
+    Raw provider details before repository metadata is applied.
+
+    Yahoo Finance may omit company name, exchange, or currency during
+    transient/incomplete responses. These fields remain optional here;
+    StockService builds the public StockDetails model using the canonical
+    stock-master values stored in PostgreSQL.
+    """
+
+    company_name: str | None = None
+    exchange: str | None = None
+    currency: str | None = None
