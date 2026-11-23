@@ -1,24 +1,32 @@
 # Production readiness runbook
 
-This project is a market-data analysis application, not a brokerage, exchange, or hardened trading platform. Treat upstream market data as best-effort and do not present it as guaranteed real-time exchange data or investment advice.
+Market Analyzer is a market-data analysis application, not a brokerage, exchange, or hardened trading platform. Upstream market data is best-effort; do not represent it as guaranteed real-time exchange data or investment advice.
 
-## Before deploying
+## Deployment configuration
 
 - [ ] Select and document the hosting platform, network topology, TLS termination point, and trusted ingress proxy addresses.
 - [ ] Provision PostgreSQL with private networking, encrypted connections where supported, automated backups, and a tested restore procedure.
-- [ ] Provision private Redis for shared rate-limit storage. Set `RATE_LIMIT_STORAGE_URI` to the authenticated TLS Redis endpoint; do not use `memory://` in production.
+- [ ] Provision private Redis for shared rate-limit and JWT revocation storage. Set `RATE_LIMIT_STORAGE_URI` to the authenticated TLS Redis endpoint; never use `memory://` in production.
 - [ ] Set `ENVIRONMENT=production` and provide secrets through the hosting platform's secret manager, not committed files or image layers.
-- [ ] Configure HTTPS at the ingress/load balancer and enable HSTS there after confirming HTTPS is enforced for the whole application domain.
-- [ ] Configure a restrictive Content Security Policy at the ingress after testing the actual API and Streamlit asset requirements. Start with report-only mode where supported.
+- [ ] Use a unique JWT secret of at least 32 characters. The application currently permits HS256 only.
+- [ ] Configure HTTPS at ingress and enable HSTS only after HTTPS is enforced across the application domain.
+- [ ] Configure a restrictive Content Security Policy at ingress after testing API and Streamlit asset requirements. Start with report-only mode where supported.
 - [ ] Configure trusted proxy handling only for known ingress addresses. Do not trust arbitrary forwarded headers from public clients.
 - [ ] Restrict database and Redis ingress to application workloads; do not expose either service publicly.
 
+## Health probes
+
+- `GET /health/live` is a process liveness probe and does not depend on backing services.
+- `GET /health/ready` checks PostgreSQL and, in production, Redis session-revocation storage. It returns HTTP 503 when a required dependency is unavailable.
+- [ ] Configure the hosting platform's liveness and readiness probes against these endpoints.
+- [ ] Confirm readiness behavior against the actual database and Redis services before traffic is routed.
+
 ## Identity and application security
 
-- [ ] Verify password hashing parameters and authentication error behavior against the current security documentation.
-- [ ] Decide and implement an account recovery process before offering accounts to external users.
-- [x] Define short-lived access-token expiry and server-side logout revocation. Production revocation uses the shared private Redis service and fails closed if Redis is unavailable.
-- [ ] Design account recovery and a refresh-token/session renewal policy before relying on long-lived sessions.
+- [ ] Verify password hashing parameters and authentication error behavior against the security documentation.
+- [ ] Design and implement account recovery with verified email ownership, single-use expiring recovery tokens, abuse controls, and generic responses before offering accounts externally.
+- [x] Access tokens have bounded expiry, unique token IDs, and server-side logout revocation. Production revocation uses shared Redis and fails closed if Redis is unavailable.
+- [ ] Design a refresh/session renewal policy before relying on long-lived sessions. Refresh-token rotation, reuse detection, and session management are not implemented by this change.
 - [ ] Verify login and signup rate limits across multiple application workers using shared Redis storage.
 - [ ] Review CORS, cookie, CSRF, and browser security requirements for the chosen frontend deployment model.
 - [ ] Confirm logs contain request metadata but never passwords, tokens, authorization headers, or raw database connection strings.
@@ -26,7 +34,7 @@ This project is a market-data analysis application, not a brokerage, exchange, o
 ## Release validation
 
 - [ ] Run the complete CI workflow and review all test results.
-- [ ] Confirm the Dependency Security Audit workflow passes on the release commit and resolve or formally assess reported advisories. The workflow also runs on pull requests.
+- [ ] Confirm the Dependency Security Audit workflow passes on the release commit and resolve or formally assess reported advisories.
 - [ ] Review Dependabot pull requests individually; inspect changelogs and test compatibility before merging.
 - [ ] Run deployment smoke tests for health, authentication, stock lookup, watchlists, and database failure handling.
 - [ ] Verify graceful shutdown and database connection cleanup under the actual process manager.
@@ -47,9 +55,9 @@ This project is a market-data analysis application, not a brokerage, exchange, o
 - [ ] Require pull requests and the `test` status check before merging.
 - [ ] Require branches to be up to date before merge where practical.
 - [ ] Restrict force pushes and branch deletion on `main`.
-- [ ] Decide whether one or two approvals are appropriate for the team size; do not require an approval rule that makes a solo-maintained repository impossible to merge.
+- [ ] Decide whether one or two approvals are appropriate for the team size; avoid approval rules that prevent a solo-maintained repository from merging.
 - [ ] Enable GitHub vulnerability alerts and Dependabot security updates where available.
 
 ## Go-live decision
 
-Do not describe the application as production-ready until the deployment-specific items above have owners, evidence, and successful verification. Passing unit tests and dependency scans alone do not validate infrastructure, recovery, browser policy, or operational readiness.
+Do not describe the application as production-ready until deployment-specific items above have owners, evidence, and successful verification. Passing unit tests and dependency scans alone do not validate infrastructure, recovery, browser policy, or operational readiness.
