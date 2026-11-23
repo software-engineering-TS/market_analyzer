@@ -1,20 +1,30 @@
-"""Regression tests for authentication endpoint rate limits."""
+"""Regression tests for rate-limit behavior and production configuration."""
 
+import pytest
 from fastapi import FastAPI, Request, Response
 from fastapi.testclient import TestClient
+from pydantic import ValidationError
+from slowapi import Limiter
 from slowapi.errors import RateLimitExceeded
 from slowapi.extension import _rate_limit_exceeded_handler
-
-from app.rate_limiting import limiter
+from slowapi.util import get_remote_address
 
 
 def _build_limited_app(path: str):
+    # Each test app gets an independent in-memory store. The production app
+    # uses the shared limiter configured in app.rate_limiting.
+    app_limiter = Limiter(
+        key_func=get_remote_address,
+        storage_uri="memory://",
+        strategy="fixed-window",
+        headers_enabled=True,
+    )
     app = FastAPI()
-    app.state.limiter = limiter
+    app.state.limiter = app_limiter
     app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
     @app.get(path)
-    @limiter.limit("2/minute")
+    @app_limiter.limit("2/minute")
     async def limited(request: Request, response: Response):
         return {"ok": True}
 
@@ -42,9 +52,6 @@ def test_rate_limit_rejects_request_after_limit():
 
 
 def test_production_settings_require_shared_redis_storage():
-    import pytest
-    from pydantic import ValidationError
-
     from app.config import Settings
 
     common = {
