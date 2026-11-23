@@ -42,3 +42,13 @@ def test_bollinger_bands_return_ordered_bounds():
     data = pd.DataFrame({"Close": [float(value) for value in range(1, 31)]})
     upper, middle, lower = IndicatorCalculator.calculate_bollinger_bands(data, 20)
     assert lower < middle < upper
+
+
+def test_bollinger_bands_require_at_least_two_observations():
+    data = pd.DataFrame({"Close": [10.0, 11.0, 12.0]})
+    assert IndicatorCalculator.calculate_bollinger_bands(data, 1) == (None, None, None)
+
+
+def test_indicator_drops_non_finite_close_values():
+    data = pd.DataFrame({"Close": [1.0, 2.0, float("inf"), 3.0]})
+    assert IndicatorCalculator.calculate_sma(data, 3) == 2.0
