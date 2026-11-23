@@ -50,7 +50,7 @@ def get_connection():
 
 
 def release_connection(connection) -> None:
-    """Return a borrowed connection to the pool."""
+    """Reset transaction state before returning a borrowed connection."""
     if connection is None:
         return
 
@@ -58,8 +58,23 @@ def release_connection(connection) -> None:
         connection.close()
         return
 
+    discard_connection = bool(connection.closed)
+
+    if not discard_connection:
+        try:
+            # psycopg2 starts transactions for ordinary SELECT statements too.
+            # Always roll back any unfinished transaction so a connection is
+            # returned idle, including after a failed query.
+            connection.rollback()
+        except Exception:
+            logger.exception(
+                "Unable to reset a PostgreSQL connection; discarding it."
+            )
+            connection.close()
+            discard_connection = True
+
     try:
-        connection_pool.putconn(connection, close=bool(connection.closed))
+        connection_pool.putconn(connection, close=discard_connection)
     except PoolError:
         logger.exception("Unable to return a PostgreSQL connection to the pool.")
         connection.close()
