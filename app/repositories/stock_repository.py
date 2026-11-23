@@ -49,12 +49,11 @@ class StockRepository:
 
         except Exception as ex:
 
-            logger.exception(
-                "Database error while retrieving stock | Symbol=%s",
-                symbol,
-            )
+            logger.error("Database error while retrieving stock")
 
-            raise DatabaseOperationError(str(ex))
+            raise DatabaseOperationError(
+                "Unable to retrieve stock information."
+            ) from ex
 
         finally:
 
