@@ -1,0 +1,57 @@
+name: Market Analyzer CI
+
+on:
+  push:
+    branches: [main, "hardening/**"]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: market_analyzer_test
+          POSTGRES_USER: market_analyzer
+          POSTGRES_PASSWORD: market_analyzer_test_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U market_analyzer -d market_analyzer_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DB_HOST: 127.0.0.1
+      DB_PORT: 5432
+      DB_NAME: market_analyzer_test
+      DB_USER: market_analyzer
+      DB_PASSWORD: market_analyzer_test_password
+      JWT_SECRET_KEY: ci-only-secret-key-at-least-32-characters-long
+      JWT_ALGORITHM: HS256
+      ACCESS_TOKEN_EXPIRE_MINUTES: 30
+      TEST_DATABASE_URL: postgresql://market_analyzer:market_analyzer_test_password@127.0.0.1:5432/market_analyzer_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+            streamlit-app/requirements.txt
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-dev.txt
+          python -m pip install -r streamlit-app/requirements.txt
+      - name: Compile Python source
+        run: python -m compileall -q app streamlit-app scripts tests
+      - name: Run test suite
+        run: python -m pytest -q
