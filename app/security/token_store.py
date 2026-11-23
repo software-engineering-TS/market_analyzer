@@ -27,6 +27,14 @@ def _redis_client() -> Redis:
     )
 
 
+def ping_token_store() -> bool:
+    """Check production Redis connectivity without exposing connection details."""
+    try:
+        return bool(_redis_client().ping())
+    except RedisError as exc:
+        raise TokenStoreUnavailableError("Session revocation storage is unavailable.") from exc
+
+
 def revoke_token_id(token_id: str, expires_at: int | float) -> None:
     """Mark a token ID revoked until its original expiry."""
     ttl = ceil(float(expires_at) - time())
